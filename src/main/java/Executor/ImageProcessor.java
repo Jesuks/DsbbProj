@@ -60,22 +60,45 @@ public class ImageProcessor {
         computeCost();
     }
 
-    private void computeCost() {
-        double[][] sobelX = {{-1, 0, 1}, {-2, 0, 2}, {-1, 0, 1}};
-        double[][] sobelY = {{-1, -2, -1}, {0, 0, 0}, {1, 2, 1}};
+//    private void computeCost() {
+//        double[][] sobelX = {{-1, 0, 1}, {-2, 0, 2}, {-1, 0, 1}};
+//        double[][] sobelY = {{-1, -2, -1}, {0, 0, 0}, {1, 2, 1}};
+//
+//        for (int y = 1; y < height + 1; y++)
+//            for (int x = 1; x < width + 1; x++) {
+//                double gx = 0, gy = 0;
+//                for (int yy = -1; yy < 2; yy++) {
+//                    for (int xx = -1; xx < 2; xx++) {
+//                        gx += sobelX[yy + 1][xx + 1] * padding[y + yy][x + xx];
+//                        gy += sobelY[yy + 1][xx + 1] * padding[y + yy][x + xx];
+//                    }
+//                }
+//                cost[y - 1][x - 1] = 1 / (1 + Math.sqrt(gx * gx + gy * gy));
+//            }
+//    }
 
-        for (int y = 1; y < height + 1; y++)
+    //revision
+    private void computeCost() {
+        // 可以尝试结合多个算子或增强梯度信息
+        double[][] sobelX = {{-1, 0, 1}, {-2, 0, 2}, {-1, 0, 1}};  // Sobel算子（水平）
+        double[][] sobelY = {{-1, -2, -1}, {0, 0, 0}, {1, 2, 1}};  // Sobel算子（垂直）
+
+        for (int y = 1; y < height + 1; y++) {
             for (int x = 1; x < width + 1; x++) {
                 double gx = 0, gy = 0;
+                // 应用Sobel算子
                 for (int yy = -1; yy < 2; yy++) {
                     for (int xx = -1; xx < 2; xx++) {
                         gx += sobelX[yy + 1][xx + 1] * padding[y + yy][x + xx];
                         gy += sobelY[yy + 1][xx + 1] * padding[y + yy][x + xx];
                     }
                 }
-                cost[y - 1][x - 1] = 1 / (1 + Math.sqrt(gx * gx + gy * gy));
+                // 计算梯度并加强边缘检测效果
+                cost[y - 1][x - 1] = 1 / (1 + Math.sqrt(gx * gx + gy * gy));  // 强化梯度
             }
+        }
     }
+    //revision
 
 
     public int getWidth() {
