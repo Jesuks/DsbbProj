@@ -13,17 +13,15 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 <junit.version>5.10.0</junit.version>  </properties>
 
-
-
+    <dependency>
+        <groupId>com.github.almasb</groupId>
+        <artifactId>fxgl</artifactId>
+        <version>17.1</version>
+    </dependency>
 
   <dependencies>
 
-    <dependency>
-      <groupId>edu.princeton.cs</groupId>
-      <artifactId>algs4</artifactId>
-      <scope>system</scope>
-      <systemPath>${project.basedir}/lib/algs4.jar</systemPath> <!-- 替换为实际路径 -->
-    </dependency>
+
 
     <dependency>
       <groupId>org.openjfx</groupId>

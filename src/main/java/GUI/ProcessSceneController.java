@@ -1,11 +1,12 @@
 package GUI;
 
+import javafx.scene.canvas.Canvas;
+import javafx.scene.input.MouseEvent;
 import Executor.DynamicProgramming;
 import Executor.ImageProcessor;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Point2D;
-import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -17,10 +18,14 @@ import java.net.URL;
 import java.util.ResourceBundle;
 
 public class ProcessSceneController implements Initializable {
-    @FXML private ImageView imageView;
-    @FXML private Button SeedPointButton;
-    @FXML private Button TargetPointButton;
-    @FXML private Canvas canvas;
+    @FXML
+    private ImageView imageView;
+    @FXML
+    private Button SeedPointButton;
+    @FXML
+    private Button TargetPointButton;
+    @FXML
+    private Canvas canvas;
 
     private Image currentImage;
     public double[][] greyarray;
@@ -226,4 +231,6 @@ public class ProcessSceneController implements Initializable {
             gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
         }
     }
+
+
 }
