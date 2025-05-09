@@ -4,6 +4,7 @@ package Executor;
 import javafx.geometry.Point2D;
 import utils.MinPQ;
 
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -38,35 +39,31 @@ public class DynamicProgramming {
         this.lastSeedY = seedY;
         this.validCache = true;
 
-        // 计算seed到其他点的最优路径. 路径信息保存在Parent中, 代价保存在costs中.
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                costs[y][x] = Double.POSITIVE_INFINITY;
-            }
-        }
+        // 初始化成本矩阵
+        for (int y = 0; y < height; y++) Arrays.fill(costs[y], Double.POSITIVE_INFINITY);
         costs[seedY][seedX] = 0;
-        // Dijkstra 算法.
-        //pq: Priority Queue.此处MinPQ满足最小值优先出队列.
+
+        // 使用优先队列进行Dijkstra算法
         MinPQ<Node> pq = new MinPQ<>(Comparator.comparingDouble(n -> n.cost));
         pq.insert(new Node(seedX, seedY, 0));
-        int[][] directions = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}, {-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
-        //1,取出cost最小节点;2, 3,检查8个方向, 计算当前节点到邻居的总成本 4,如果新成本更小, 则更新
+
+        int[][] dirs = {{-1,0}, {1,0}, {0,-1}, {0,1}, {-1,-1}, {-1,1}, {1,-1}, {1,1}};
+
         while (!pq.isEmpty()) {
             Node node = pq.delMin();
             int x = node.x, y = node.y;
             if (node.cost > costs[y][x]) continue;
-            //寻路
-            for (int[] dir : directions) {
+
+            for (int[] dir : dirs) {
                 int nx = x + dir[0], ny = y + dir[1];
-                if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                    double edgeCost = processor.computeEdgeCost(nx, ny);
-                    double newCost = costs[y][x] + edgeCost;
-                    if (newCost < costs[ny][nx]) {
-                        costs[ny][nx] = newCost;
-                        parentX[ny][nx] = x;
-                        parentY[ny][nx] = y;
-                        pq.insert(new Node(nx, ny, newCost));
-                    }
+                if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
+
+                double newCost = costs[y][x] + processor.computeEdgeCost(nx, ny);
+                if (newCost < costs[ny][nx]) {
+                    costs[ny][nx] = newCost;
+                    parentX[ny][nx] = x;
+                    parentY[ny][nx] = y;
+                    pq.insert(new Node(nx, ny, newCost));
                 }
             }
         }
