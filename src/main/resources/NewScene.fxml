@@ -1,16 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
-<?import javafx.scene.canvas.Canvas?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.image.ImageView?>
+<?import javafx.scene.canvas.Canvas?>
 <?import javafx.scene.layout.AnchorPane?>
 
 <AnchorPane prefHeight="675.0" prefWidth="1038.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="GUI.ProcessSceneController">
    <children>
-      <ImageView fx:id="imageView" fitHeight="400.0" fitWidth="400.0" layoutX="319.0" layoutY="100.0" pickOnBounds="true" preserveRatio="true" />
-      <Canvas fx:id="canvas" height="400.0" layoutX="319.0" layoutY="100.0" width="400.0" />
-      <Button fx:id="SeedPointButton" layoutX="319.0" layoutY="550.0" onAction="#setSeedPoint" prefHeight="25.0" prefWidth="100.0" text="Select Seed" />
-      <Button fx:id="TargetPointButton" layoutX="476.0" layoutY="550.0" onAction="#setTargetPoint" prefHeight="25.0" prefWidth="100.0" text="Select Target" />
-      <Button fx:id="exportButton" layoutX="632.0" layoutY="550.0" onAction="#exportCroppedRegion" prefHeight="25.0" prefWidth="72.0" text="导出抠图" />
+      <ImageView fx:id="imageView" layoutX="0.0" layoutY="0.0" pickOnBounds="true" preserveRatio="true" />
+      <Canvas fx:id="canvas" layoutX="0.0" layoutY="0.0" />
+      <Button fx:id="SeedPointButton" layoutX="10.0" layoutY="10.0" onAction="#setSeedPoint" prefHeight="25.0" prefWidth="100.0" text="Select Seed" />
+      <Button fx:id="TargetPointButton" layoutX="120.0" layoutY="10.0" onAction="#setTargetPoint" prefHeight="25.0" prefWidth="100.0" text="Select Target" />
+      <Button fx:id="ExportButton" layoutX="230.0" layoutY="10.0" onAction="#exportCroppedRegion" prefHeight="25.0" prefWidth="100.0" text="Export" />
    </children>
 </AnchorPane>
