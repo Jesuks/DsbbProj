@@ -24,6 +24,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.ResourceBundle;
 
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+
 public class ProcessSceneController implements Initializable {
     @FXML private ImageView imageView;
     @FXML private Button SeedPointButton;
@@ -52,12 +55,23 @@ public class ProcessSceneController implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        //
+        canvas.setFocusTraversable(true);
+        canvas.setOnKeyPressed(this::handleKeyInput);
+        //
         System.out.println("SeedPointButton: " + SeedPointButton);
         System.out.println("imageView: " + imageView);
         System.out.println("canvas: " + canvas);
         if (canvas != null) {
             canvas.getGraphicsContext2D().setFill(Color.TRANSPARENT);
             clearCanvas();
+        }
+    }
+    private void handleKeyInput(KeyEvent event) {
+        if (event.getCode() ==  KeyCode.PLUS || event.getText().equals("+") ){
+            enterAddAnchorMode();  // 启动添加模式
+        } else if (event.getCode() == KeyCode.MINUS || event.getText().equals("-")) {
+            exitAddAnchorMode();   // 结束并闭合路径
         }
     }
 
@@ -154,6 +168,7 @@ public class ProcessSceneController implements Initializable {
                 dynamicProgramming.computePaths(x, y);
                 canvas.setOnMouseClicked(null);
                 System.out.println("种子点设置: (" + x + ", " + y + ")");
+                canvas.requestFocus();  // 🔑 获取键盘焦点
             } catch (Exception e) {
                 System.out.println("setSeedPoint 错误: " + e.getMessage());
                 e.printStackTrace();
@@ -161,40 +176,211 @@ public class ProcessSceneController implements Initializable {
         });
     }
 
-    @FXML
-    private void setTargetPoint(ActionEvent event) {
+
+
+//    @FXML
+//    private void setTargetPoint(ActionEvent event) {
+//        if (seedPoint == null) {
+//            System.out.println("请先选择种子点");
+//            return;
+//        }
+//
+//        isAddingTargets = !isAddingTargets;
+//
+//        if (isAddingTargets) {
+//            System.out.println("进入连续目标点添加模式（支持实时预览）");
+//            canvas.setOnMouseClicked(null);
+//            canvas.setOnMouseMoved(null);
+//
+//            // 鼠标移动：实时预览路径
+//            canvas.setOnMouseMoved(mouseEvent -> {
+//                if (pathPoints.isEmpty()) return;
+//
+//                double mouseX = mouseEvent.getX();
+//                double mouseY = mouseEvent.getY();
+//                Point2D imagePoint = canvasToImageCoordinates(mouseX, mouseY);
+//                int x = (int) Math.round(imagePoint.getX());
+//                int y = (int) Math.round(imagePoint.getY());
+//                // 限制在图片范围内
+//                if (x < 0 || x >= currentImage.getWidth() || y < 0 || y >= currentImage.getHeight()) {
+//                    return;
+//                }
+//
+//                Point2D currentPoint = new Point2D(x, y);
+//                if (lastPreviewPoint != null && currentPoint.distance(lastPreviewPoint) < PREVIEW_MOVE_THRESHOLD) {
+//                    return;
+//                }
+//                lastPreviewPoint = currentPoint;
+//
+//                clearCanvas();
+//                for (int[][] segment : committedPaths) {
+//                    drawPath(segment);
+//                }
+//                for (Point2D point : pathPoints) {
+//                    drawPoint((int) point.getX(), (int) point.getY(), Color.LIMEGREEN);
+//                }
+//                if (closingPath != null) {
+//                    drawPath(closingPath);
+//                }
+//
+//                Point2D lastPoint = pathPoints.get(pathPoints.size() - 1);
+//                Task<int[][]> previewTask = new Task<>() {
+//                    @Override
+//                    protected int[][] call() {
+//                        dynamicProgramming.computePaths((int) lastPoint.getX(), (int) lastPoint.getY());
+//                        return dynamicProgramming.getPath(x, y);
+//                    }
+//                };
+//                previewTask.setOnSucceeded(e -> {
+//                    clearCanvas();
+//                    for (int[][] segment : committedPaths) {
+//                        drawPath(segment);
+//                    }
+//                    for (Point2D point : pathPoints) {
+//                        drawPoint((int) point.getX(), (int) point.getY(), Color.LIMEGREEN);
+//                    }
+//                    if (closingPath != null) {
+//                        drawPath(closingPath);
+//                    }
+//                    drawPath(previewTask.getValue());
+//                });
+//                new Thread(previewTask).start();
+//            });
+//
+//            // 鼠标点击：固定路径段
+//            canvas.setOnMouseClicked(mouseEvent -> {
+//                try {
+//                    double mouseX = mouseEvent.getX();
+//                    double mouseY = mouseEvent.getY();
+//                    Point2D imagePoint = canvasToImageCoordinates(mouseX, mouseY);
+//                    int x = (int) Math.round(imagePoint.getX());
+//                    int y = (int) Math.round(imagePoint.getY());
+//                    // 严格限制在图片范围内
+//                    if (x < 0 || x >= currentImage.getWidth() || y < 0 || y >= currentImage.getHeight()) {
+//                        System.out.println("点击超出图片范围: (" + x + ", " + y + ")");
+//                        return;
+//                    }
+//
+//                    Point2D newTarget = new Point2D(x, y);
+//                    Point2D lastPoint = pathPoints.get(pathPoints.size() - 1);
+//                    pathPoints.add(newTarget);
+//                    drawPoint(x, y, Color.LIMEGREEN);
+//
+//                    Task<int[][]> task = new Task<>() {
+//                        @Override
+//                        protected int[][] call() {
+//                            dynamicProgramming.computePaths((int) lastPoint.getX(), (int) lastPoint.getY());
+//                            return dynamicProgramming.getPath(x, y);
+//                        }
+//                    };
+//                    task.setOnSucceeded(e -> {
+//                        int[][] pathSegment = task.getValue();
+//                        committedPaths.add(pathSegment);
+//                        clearCanvas();
+//                        for (int[][] segment : committedPaths) {
+//                            drawPath(segment);
+//                        }
+//                        for (Point2D point : pathPoints) {
+//                            drawPoint((int) point.getX(), (int) point.getY(), Color.LIMEGREEN);
+//                        }
+//                        if (closingPath != null) {
+//                            drawPath(closingPath);
+//                        }
+//                        System.out.println("目标点添加: (" + x + ", " + y + "), 路径段数量: " + committedPaths.size());
+//                    });
+//                    new Thread(task).start();
+//
+//                    // 更新种子点
+//                    seedPoint = newTarget;
+//                } catch (Exception e) {
+//                    System.out.println("setTargetPoint 点击错误: " + e.getMessage());
+//                    e.printStackTrace();
+//                }
+//            });
+//        } else {
+//            System.out.println("退出添加模式，生成闭合路径");
+//            canvas.setOnMouseMoved(null);
+//            canvas.setOnMouseClicked(null);
+//            lastPreviewPoint = null;
+//
+//            if (pathPoints.size() > 1) {
+//                Point2D lastPoint = pathPoints.get(pathPoints.size() - 1);
+//                Task<int[][]> closeTask = new Task<>() {
+//                    @Override
+//                    protected int[][] call() {
+//                        dynamicProgramming.computePaths((int) lastPoint.getX(), (int) lastPoint.getY());
+//                        return dynamicProgramming.getPath((int) pathPoints.get(0).getX(), (int) pathPoints.get(0).getY());
+//                    }
+//                };
+//                closeTask.setOnSucceeded(e -> {
+//                    closingPath = closeTask.getValue();
+//                    committedPaths.add(closingPath);
+//                    clearCanvas();
+//                    for (int[][] segment : committedPaths) {
+//                        drawPath(segment);
+//                    }
+//                    for (Point2D point : pathPoints) {
+//                        drawPoint((int) point.getX(), (int) point.getY(), Color.LIMEGREEN);
+//                    }
+//                    System.out.println("闭合路径生成，路径段总数: " + committedPaths.size());
+//                });
+//                new Thread(closeTask).start();
+//            }
+//        }
+//    }
+
+    private void enterAddAnchorMode() {
         if (seedPoint == null) {
             System.out.println("请先选择种子点");
             return;
         }
 
-        isAddingTargets = !isAddingTargets;
+        isAddingTargets = true;
+        System.out.println("进入连续目标点添加模式（支持实时预览）");
 
-        if (isAddingTargets) {
-            System.out.println("进入连续目标点添加模式（支持实时预览）");
-            canvas.setOnMouseClicked(null);
-            canvas.setOnMouseMoved(null);
+        canvas.setOnMouseClicked(null);
+        canvas.setOnMouseMoved(null);
 
-            // 鼠标移动：实时预览路径
-            canvas.setOnMouseMoved(mouseEvent -> {
-                if (pathPoints.isEmpty()) return;
+        // 鼠标移动：实时预览路径
+        canvas.setOnMouseMoved(mouseEvent -> {
+            if (pathPoints.isEmpty()) return;
 
-                double mouseX = mouseEvent.getX();
-                double mouseY = mouseEvent.getY();
-                Point2D imagePoint = canvasToImageCoordinates(mouseX, mouseY);
-                int x = (int) Math.round(imagePoint.getX());
-                int y = (int) Math.round(imagePoint.getY());
-                // 限制在图片范围内
-                if (x < 0 || x >= currentImage.getWidth() || y < 0 || y >= currentImage.getHeight()) {
-                    return;
+            double mouseX = mouseEvent.getX();
+            double mouseY = mouseEvent.getY();
+            Point2D imagePoint = canvasToImageCoordinates(mouseX, mouseY);
+            int x = (int) Math.round(imagePoint.getX());
+            int y = (int) Math.round(imagePoint.getY());
+            // 限制在图片范围内
+            if (x < 0 || x >= currentImage.getWidth() || y < 0 || y >= currentImage.getHeight()) {
+                return;
+            }
+
+            Point2D currentPoint = new Point2D(x, y);
+            if (lastPreviewPoint != null && currentPoint.distance(lastPreviewPoint) < PREVIEW_MOVE_THRESHOLD) {
+                return;
+            }
+            lastPreviewPoint = currentPoint;
+
+            clearCanvas();
+            for (int[][] segment : committedPaths) {
+                drawPath(segment);
+            }
+            for (Point2D point : pathPoints) {
+                drawPoint((int) point.getX(), (int) point.getY(), Color.LIMEGREEN);
+            }
+            if (closingPath != null) {
+                drawPath(closingPath);
+            }
+
+            Point2D lastPoint = pathPoints.get(pathPoints.size() - 1);
+            Task<int[][]> previewTask = new Task<>() {
+                @Override
+                protected int[][] call() {
+                    dynamicProgramming.computePaths((int) lastPoint.getX(), (int) lastPoint.getY());
+                    return dynamicProgramming.getPath(x, y);
                 }
-
-                Point2D currentPoint = new Point2D(x, y);
-                if (lastPreviewPoint != null && currentPoint.distance(lastPreviewPoint) < PREVIEW_MOVE_THRESHOLD) {
-                    return;
-                }
-                lastPreviewPoint = currentPoint;
-
+            };
+            previewTask.setOnSucceeded(e -> {
                 clearCanvas();
                 for (int[][] segment : committedPaths) {
                     drawPath(segment);
@@ -205,16 +391,40 @@ public class ProcessSceneController implements Initializable {
                 if (closingPath != null) {
                     drawPath(closingPath);
                 }
+                drawPath(previewTask.getValue());
+            });
+            new Thread(previewTask).start();
+        });
 
+        // 鼠标点击：固定路径段
+        canvas.setOnMouseClicked(mouseEvent -> {
+            try {
+                double mouseX = mouseEvent.getX();
+                double mouseY = mouseEvent.getY();
+                Point2D imagePoint = canvasToImageCoordinates(mouseX, mouseY);
+                int x = (int) Math.round(imagePoint.getX());
+                int y = (int) Math.round(imagePoint.getY());
+                // 严格限制在图片范围内
+                if (x < 0 || x >= currentImage.getWidth() || y < 0 || y >= currentImage.getHeight()) {
+                    System.out.println("点击超出图片范围: (" + x + ", " + y + ")");
+                    return;
+                }
+
+                Point2D newTarget = new Point2D(x, y);
                 Point2D lastPoint = pathPoints.get(pathPoints.size() - 1);
-                Task<int[][]> previewTask = new Task<>() {
+                pathPoints.add(newTarget);
+                drawPoint(x, y, Color.LIMEGREEN);
+
+                Task<int[][]> task = new Task<>() {
                     @Override
                     protected int[][] call() {
                         dynamicProgramming.computePaths((int) lastPoint.getX(), (int) lastPoint.getY());
                         return dynamicProgramming.getPath(x, y);
                     }
                 };
-                previewTask.setOnSucceeded(e -> {
+                task.setOnSucceeded(e -> {
+                    int[][] pathSegment = task.getValue();
+                    committedPaths.add(pathSegment);
                     clearCanvas();
                     for (int[][] segment : committedPaths) {
                         drawPath(segment);
@@ -225,92 +435,52 @@ public class ProcessSceneController implements Initializable {
                     if (closingPath != null) {
                         drawPath(closingPath);
                     }
-                    drawPath(previewTask.getValue());
+                    System.out.println("目标点添加: (" + x + ", " + y + "), 路径段数量: " + committedPaths.size());
                 });
-                new Thread(previewTask).start();
-            });
+                new Thread(task).start();
 
-            // 鼠标点击：固定路径段
-            canvas.setOnMouseClicked(mouseEvent -> {
-                try {
-                    double mouseX = mouseEvent.getX();
-                    double mouseY = mouseEvent.getY();
-                    Point2D imagePoint = canvasToImageCoordinates(mouseX, mouseY);
-                    int x = (int) Math.round(imagePoint.getX());
-                    int y = (int) Math.round(imagePoint.getY());
-                    // 严格限制在图片范围内
-                    if (x < 0 || x >= currentImage.getWidth() || y < 0 || y >= currentImage.getHeight()) {
-                        System.out.println("点击超出图片范围: (" + x + ", " + y + ")");
-                        return;
-                    }
-
-                    Point2D newTarget = new Point2D(x, y);
-                    Point2D lastPoint = pathPoints.get(pathPoints.size() - 1);
-                    pathPoints.add(newTarget);
-                    drawPoint(x, y, Color.LIMEGREEN);
-
-                    Task<int[][]> task = new Task<>() {
-                        @Override
-                        protected int[][] call() {
-                            dynamicProgramming.computePaths((int) lastPoint.getX(), (int) lastPoint.getY());
-                            return dynamicProgramming.getPath(x, y);
-                        }
-                    };
-                    task.setOnSucceeded(e -> {
-                        int[][] pathSegment = task.getValue();
-                        committedPaths.add(pathSegment);
-                        clearCanvas();
-                        for (int[][] segment : committedPaths) {
-                            drawPath(segment);
-                        }
-                        for (Point2D point : pathPoints) {
-                            drawPoint((int) point.getX(), (int) point.getY(), Color.LIMEGREEN);
-                        }
-                        if (closingPath != null) {
-                            drawPath(closingPath);
-                        }
-                        System.out.println("目标点添加: (" + x + ", " + y + "), 路径段数量: " + committedPaths.size());
-                    });
-                    new Thread(task).start();
-
-                    // 更新种子点
-                    seedPoint = newTarget;
-                } catch (Exception e) {
-                    System.out.println("setTargetPoint 点击错误: " + e.getMessage());
-                    e.printStackTrace();
-                }
-            });
-        } else {
-            System.out.println("退出添加模式，生成闭合路径");
-            canvas.setOnMouseMoved(null);
-            canvas.setOnMouseClicked(null);
-            lastPreviewPoint = null;
-
-            if (pathPoints.size() > 1) {
-                Point2D lastPoint = pathPoints.get(pathPoints.size() - 1);
-                Task<int[][]> closeTask = new Task<>() {
-                    @Override
-                    protected int[][] call() {
-                        dynamicProgramming.computePaths((int) lastPoint.getX(), (int) lastPoint.getY());
-                        return dynamicProgramming.getPath((int) pathPoints.get(0).getX(), (int) pathPoints.get(0).getY());
-                    }
-                };
-                closeTask.setOnSucceeded(e -> {
-                    closingPath = closeTask.getValue();
-                    committedPaths.add(closingPath);
-                    clearCanvas();
-                    for (int[][] segment : committedPaths) {
-                        drawPath(segment);
-                    }
-                    for (Point2D point : pathPoints) {
-                        drawPoint((int) point.getX(), (int) point.getY(), Color.LIMEGREEN);
-                    }
-                    System.out.println("闭合路径生成，路径段总数: " + committedPaths.size());
-                });
-                new Thread(closeTask).start();
+                // 更新种子点
+                seedPoint = newTarget;
+            } catch (Exception e) {
+                System.out.println("setTargetPoint 点击错误: " + e.getMessage());
+                e.printStackTrace();
             }
+        });
+    }
+
+    private void exitAddAnchorMode() {
+        System.out.println("退出添加模式，生成闭合路径");
+        isAddingTargets = false;
+        canvas.setOnMouseMoved(null);
+        canvas.setOnMouseClicked(null);
+        lastPreviewPoint = null;
+
+        if (pathPoints.size() > 1) {
+            Point2D lastPoint = pathPoints.get(pathPoints.size() - 1);
+            Task<int[][]> closeTask = new Task<>() {
+                @Override
+                protected int[][] call() {
+                    dynamicProgramming.computePaths((int) lastPoint.getX(), (int) lastPoint.getY());
+                    return dynamicProgramming.getPath((int) pathPoints.get(0).getX(), (int) pathPoints.get(0).getY());
+                }
+            };
+            closeTask.setOnSucceeded(e -> {
+                closingPath = closeTask.getValue();
+                committedPaths.add(closingPath);
+                clearCanvas();
+                for (int[][] segment : committedPaths) {
+                    drawPath(segment);
+                }
+                for (Point2D point : pathPoints) {
+                    drawPoint((int) point.getX(), (int) point.getY(), Color.LIMEGREEN);
+                }
+                System.out.println("闭合路径生成，路径段总数: " + committedPaths.size());
+            });
+            new Thread(closeTask).start();
         }
     }
+
+
 
     @FXML
     private void exportCroppedRegion(ActionEvent event) {
@@ -434,4 +604,8 @@ public class ProcessSceneController implements Initializable {
             gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
         }
     }
+
+
+
+
 }

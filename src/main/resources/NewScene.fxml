@@ -9,7 +9,7 @@
       <ImageView fx:id="imageView" layoutX="0.0" layoutY="0.0" pickOnBounds="true" preserveRatio="true" />
       <Canvas fx:id="canvas" layoutX="0.0" layoutY="0.0" />
       <Button fx:id="SeedPointButton" layoutX="10.0" layoutY="10.0" onAction="#setSeedPoint" prefHeight="25.0" prefWidth="100.0" text="Select Seed" />
-      <Button fx:id="TargetPointButton" layoutX="120.0" layoutY="10.0" onAction="#setTargetPoint" prefHeight="25.0" prefWidth="100.0" text="Select Target" />
+<!--      <Button fx:id="TargetPointButton" layoutX="120.0" layoutY="10.0" onAction="#setTargetPoint" prefHeight="25.0" prefWidth="100.0" text="Select Target" />-->
       <Button fx:id="ExportButton" layoutX="230.0" layoutY="10.0" onAction="#exportCroppedRegion" prefHeight="25.0" prefWidth="100.0" text="Export" />
    </children>
 </AnchorPane>
