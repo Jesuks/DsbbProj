@@ -9,6 +9,7 @@ import javafx.embed.swing.SwingFXUtils;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Point2D;
+import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.*;
 import javafx.scene.control.Button;
@@ -26,14 +27,11 @@ import java.util.List;
 import java.util.ResourceBundle;
 
 public class ProcessSceneController implements Initializable {
-    @FXML
-    private ImageView imageView;
-    @FXML
-    private Button SeedPointButton;
-    @FXML
-    private Button TargetPointButton;
-    @FXML
-    private Canvas canvas;
+    @FXML private ImageView imageView;
+    @FXML private Button SeedPointButton;
+    @FXML private Button TargetPointButton;
+    @FXML private Button ExportButton;
+    @FXML private Canvas canvas;
 
     private Image currentImage;
     public double[][] greyarray;
@@ -45,10 +43,10 @@ public class ProcessSceneController implements Initializable {
     private Point2D[] imageCorners = new Point2D[4];
 
     // 路径相关
-    private boolean isAddingTargets = false; // 是否在连续添加目标点
-    private List<Point2D> pathPoints = new ArrayList<>(); // 路径点列表（种子点 + 目标点）
-    private List<int[][]> committedPaths = new ArrayList<>(); // 已固定的路径段
-    private int[][] closingPath = null; // 闭合路径
+    private boolean isAddingTargets = false;
+    private List<Point2D> pathPoints = new ArrayList<>();
+    private List<int[][]> committedPaths = new ArrayList<>();
+    private int[][] closingPath = null;
 
     // 路径冷却机制
     private Point2D lastPreviewPoint = null;
@@ -69,14 +67,32 @@ public class ProcessSceneController implements Initializable {
         this.currentImage = image;
         imageView.setImage(image);
         imageView.setPreserveRatio(true);
-        imageView.setFitWidth(400);
-        imageView.setFitHeight(400);
+
+        // 动态设置 Canvas 和 ImageView 大小与图片一致
+        double imageWidth = image.getWidth();
+        double imageHeight = image.getHeight();
+        imageView.setFitWidth(imageWidth);
+        imageView.setFitHeight(imageHeight);
+        canvas.setWidth(imageWidth);
+        canvas.setHeight(imageHeight);
+
+        // 居中显示
+        double paneWidth = 1038.0; // AnchorPane 的宽度
+        double paneHeight = 675.0; // AnchorPane 的高度
+        double layoutX = (paneWidth - imageWidth) / 2;
+        double layoutY = (paneHeight - imageHeight) / 2;
+        imageView.setLayoutX(layoutX);
+        imageView.setLayoutY(layoutY);
+        canvas.setLayoutX(layoutX);
+        canvas.setLayoutY(layoutY);
+
         this.greyarray = imageToDoubleArray(currentImage);
         this.imageProcessor = new ImageProcessor(this.greyarray);
         this.cost = imageProcessor.cost;
         this.dynamicProgramming = new DynamicProgramming(imageProcessor);
         calculateImageCorners();
         clearCanvas();
+        System.out.println("图片加载: " + imageWidth + "x" + imageHeight);
     }
 
     private void calculateImageCorners() {
@@ -130,8 +146,11 @@ public class ProcessSceneController implements Initializable {
                 Point2D imagePoint = canvasToImageCoordinates(mouseX, mouseY);
                 int x = (int) Math.round(imagePoint.getX());
                 int y = (int) Math.round(imagePoint.getY());
-                x = Math.max(0, Math.min(x, (int) currentImage.getWidth() - 1));
-                y = Math.max(0, Math.min(y, (int) currentImage.getHeight() - 1));
+                // 严格限制在图片范围内
+                if (x < 0 || x >= currentImage.getWidth() || y < 0 || y >= currentImage.getHeight()) {
+                    System.out.println("点击超出图片范围: (" + x + ", " + y + ")");
+                    return;
+                }
                 seedPoint = new Point2D(x, y);
                 pathPoints.add(seedPoint);
                 drawPoint(x, y, Color.LIMEGREEN);
@@ -168,12 +187,14 @@ public class ProcessSceneController implements Initializable {
                 Point2D imagePoint = canvasToImageCoordinates(mouseX, mouseY);
                 int x = (int) Math.round(imagePoint.getX());
                 int y = (int) Math.round(imagePoint.getY());
-                x = Math.max(0, Math.min(x, (int) currentImage.getWidth() - 1));
-                y = Math.max(0, Math.min(y, (int) currentImage.getHeight() - 1));
+                // 限制在图片范围内
+                if (x < 0 || x >= currentImage.getWidth() || y < 0 || y >= currentImage.getHeight()) {
+                    return;
+                }
 
                 Point2D currentPoint = new Point2D(x, y);
                 if (lastPreviewPoint != null && currentPoint.distance(lastPreviewPoint) < PREVIEW_MOVE_THRESHOLD) {
-                    return; // 鼠标移动距离过小，跳过
+                    return;
                 }
                 lastPreviewPoint = currentPoint;
 
@@ -197,7 +218,7 @@ public class ProcessSceneController implements Initializable {
                     @Override
                     protected int[][] call() {
                         dynamicProgramming.computePaths((int) lastPoint.getX(), (int) lastPoint.getY());
-                        return dynamicProgramming.getPath(finalX, finalY);
+                        return dynamicProgramming.getPath(x, y);
                     }
                 };
                 previewTask.setOnSucceeded(e -> {
@@ -224,8 +245,11 @@ public class ProcessSceneController implements Initializable {
                     Point2D imagePoint = canvasToImageCoordinates(mouseX, mouseY);
                     int x = (int) Math.round(imagePoint.getX());
                     int y = (int) Math.round(imagePoint.getY());
-                    x = Math.max(0, Math.min(x, (int) currentImage.getWidth() - 1));
-                    y = Math.max(0, Math.min(y, (int) currentImage.getHeight() - 1));
+                    // 严格限制在图片范围内
+                    if (x < 0 || x >= currentImage.getWidth() || y < 0 || y >= currentImage.getHeight()) {
+                        System.out.println("点击超出图片范围: (" + x + ", " + y + ")");
+                        return;
+                    }
 
                     Point2D newTarget = new Point2D(x, y);
                     Point2D lastPoint = pathPoints.get(pathPoints.size() - 1);
@@ -239,7 +263,7 @@ public class ProcessSceneController implements Initializable {
                         @Override
                         protected int[][] call() {
                             dynamicProgramming.computePaths((int) lastPoint.getX(), (int) lastPoint.getY());
-                            return dynamicProgramming.getPath(finalX1, finalY1);
+                            return dynamicProgramming.getPath(x, y);
                         }
                     };
                     int finalX = x;
@@ -257,11 +281,11 @@ public class ProcessSceneController implements Initializable {
                         if (closingPath != null) {
                             drawPath(closingPath);
                         }
-                        System.out.println("目标点添加: (" + finalX + ", " + finalY + "), 路径段数量: " + committedPaths.size());
+                        System.out.println("目标点添加: (" + x + ", " + y + "), 路径段数量: " + committedPaths.size());
                     });
                     new Thread(task).start();
 
-                    // 更新种子点为当前目标点
+                    // 更新种子点
                     seedPoint = newTarget;
                 } catch (Exception e) {
                     System.out.println("setTargetPoint 点击错误: " + e.getMessage());
@@ -285,7 +309,7 @@ public class ProcessSceneController implements Initializable {
                 };
                 closeTask.setOnSucceeded(e -> {
                     closingPath = closeTask.getValue();
-                    committedPaths.add(closingPath); // 将闭合路径加入 committedPaths
+                    committedPaths.add(closingPath);
                     clearCanvas();
                     for (int[][] segment : committedPaths) {
                         drawPath(segment);
@@ -374,16 +398,11 @@ public class ProcessSceneController implements Initializable {
             System.out.println("错误: currentImage 为 null");
             return new Point2D(0, 0);
         }
-        double imageWidth = currentImage.getWidth();
-        double imageHeight = currentImage.getHeight();
-        double canvasWidth = canvas.getWidth();
-        double canvasHeight = canvas.getHeight();
-        double scaleX = imageWidth / canvasWidth;
-        double scaleY = imageHeight / canvasHeight;
-        double imageX = canvasX * scaleX;
-        double imageY = canvasY * scaleY;
-        imageX = Math.max(0, Math.min(imageX, imageWidth - 1));
-        imageY = Math.max(0, Math.min(imageY, imageHeight - 1));
+        // Canvas 和图片大小一致，直接映射
+        double imageX = canvasX;
+        double imageY = canvasY;
+        imageX = Math.max(0, Math.min(imageX, currentImage.getWidth() - 1));
+        imageY = Math.max(0, Math.min(imageY, currentImage.getHeight() - 1));
         return new Point2D(imageX, imageY);
     }
 
@@ -394,9 +413,8 @@ public class ProcessSceneController implements Initializable {
         }
         GraphicsContext gc = canvas.getGraphicsContext2D();
         gc.setFill(color);
-        double canvasX = imageX * (canvas.getWidth() / currentImage.getWidth());
-        double canvasY = imageY * (canvas.getHeight() / currentImage.getHeight());
-        gc.fillOval(canvasX - 2, canvasY - 2, 4, 4);
+        // 直接使用图片坐标（Canvas 大小与图片一致）
+        gc.fillOval(imageX - 2, imageY - 2, 4, 4);
     }
 
     private void drawPath(int[][] path) {
@@ -411,15 +429,18 @@ public class ProcessSceneController implements Initializable {
         for (int i = 0; i < path.length; i++) {
             int imageX = path[i][0];
             int imageY = path[i][1];
-            double canvasX = imageX * (canvas.getWidth() / currentImage.getWidth());
-            double canvasY = imageY * (canvas.getHeight() / currentImage.getHeight());
-            gc.fillOval(canvasX - 2, canvasY - 2, 4, 4);
+            // 确保路径点在图片范围内
+            if (imageX < 0 || imageX >= currentImage.getWidth() || imageY < 0 || imageY >= currentImage.getHeight()) {
+                continue;
+            }
+            gc.fillOval(imageX - 2, imageY - 2, 4, 4);
             if (i > 0) {
                 int prevX = path[i - 1][0];
                 int prevY = path[i - 1][1];
-                double prevCanvasX = prevX * (canvas.getWidth() / currentImage.getWidth());
-                double prevCanvasY = prevY * (canvas.getHeight() / currentImage.getHeight());
-                gc.strokeLine(prevCanvasX, prevCanvasY, canvasX, canvasY);
+                if (prevX < 0 || prevX >= currentImage.getWidth() || prevY < 0 || prevY >= currentImage.getHeight()) {
+                    continue;
+                }
+                gc.strokeLine(prevX, prevY, imageX, imageY);
             }
         }
     }
@@ -430,6 +451,4 @@ public class ProcessSceneController implements Initializable {
             gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
         }
     }
-
-
 }
