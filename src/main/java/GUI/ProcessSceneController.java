@@ -517,74 +517,158 @@ public class ProcessSceneController implements Initializable {
         }
 
 
-    @FXML
-    private void exportCroppedRegion(ActionEvent event) {
-        if (currentImage == null || pathPoints.size() < 2 || committedPaths.isEmpty()) {
-            System.out.println("路径未闭合或路径点不足，无法导出抠图");
-            return;
+//    @FXML
+//    private void exportCroppedRegion(ActionEvent event) {
+//        if (currentImage == null || pathPoints.size() < 2 || committedPaths.isEmpty()) {
+//            System.out.println("路径未闭合或路径点不足，无法导出抠图");
+//            return;
+//        }
+//
+//        int width = (int) currentImage.getWidth();
+//        int height = (int) currentImage.getHeight();
+//
+//        // 使用 committedPaths 构造完整路径
+//        List<int[]> fullPath = new ArrayList<>();
+//        for (int[][] segment : committedPaths) {
+//            fullPath.addAll(Arrays.asList(segment));
+//        }
+//
+//        // 初始化遮罩
+//        boolean[][] mask = new boolean[height][width];
+//        for (int[] p : fullPath) {
+//            int x = p[0], y = p[1];
+//            if (x >= 0 && x < width && y >= 0 && y < height) {
+//                mask[y][x] = true;
+//            }
+//        }
+//
+//        // 扫描线填充
+//        for (int y = 0; y < height; y++) {
+//            boolean inside = false;
+//            for (int x = 0; x < width; x++) {
+//                if (mask[y][x]) {
+//                    inside = !inside;
+//                }
+//                if (inside) {
+//                    mask[y][x] = true;
+//                }
+//            }
+//        }
+//
+//        // 创建透明图像
+//        WritableImage cropped = new WritableImage(width, height);
+//        PixelReader reader = currentImage.getPixelReader();
+//        PixelWriter writer = cropped.getPixelWriter();
+//
+//        for (int y = 0; y < height; y++) {
+//            for (int x = 0; x < width; x++) {
+//                Color color = reader.getColor(x, y);
+//                if (mask[y][x]) {
+//                    writer.setColor(x, y, color);
+//                } else {
+//                    writer.setColor(x, y, new Color(0, 0, 0, 0));
+//                }
+//            }
+//        }
+//
+//        // 保存图像
+//        FileChooser fileChooser = new FileChooser();
+//        fileChooser.setTitle("导出抠图区域");
+//        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG 图片", "*.png"));
+//        File file = fileChooser.showSaveDialog(canvas.getScene().getWindow());
+//        if (file != null) {
+//            try {
+//                ImageIO.write(SwingFXUtils.fromFXImage(cropped, null), "png", file);
+//                System.out.println("图像保存成功: " + file.getAbsolutePath());
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        }
+//    }
+@FXML
+private void exportCroppedRegion(ActionEvent event) {
+    if (currentImage == null || pathPoints.size() < 2 || committedPaths.isEmpty()) {
+        System.out.println("路径未闭合或路径点不足，无法导出抠图");
+        return;
+    }
+
+    int width = (int) currentImage.getWidth();
+    int height = (int) currentImage.getHeight();
+
+    List<int[]> fullPath = new ArrayList<>();
+    for (int[][] segment : committedPaths) {
+        fullPath.addAll(Arrays.asList(segment));
+    }
+
+    boolean[][] edgeMask = new boolean[height][width];
+    for (int[] p : fullPath) {
+        int x = p[0], y = p[1];
+        if (x >= 0 && x < width && y >= 0 && y < height) {
+            edgeMask[y][x] = true;
         }
+    }
 
-        int width = (int) currentImage.getWidth();
-        int height = (int) currentImage.getHeight();
+    // Flood Fill from border to mark outside area
+    boolean[][] visited = new boolean[height][width];
+    floodFillOutside(visited, edgeMask, width, height);
 
-        // 使用 committedPaths 构造完整路径
-        List<int[]> fullPath = new ArrayList<>();
-        for (int[][] segment : committedPaths) {
-            fullPath.addAll(Arrays.asList(segment));
-        }
+    // Create image and write pixels
+    WritableImage cropped = new WritableImage(width, height);
+    PixelReader reader = currentImage.getPixelReader();
+    PixelWriter writer = cropped.getPixelWriter();
 
-        // 初始化遮罩
-        boolean[][] mask = new boolean[height][width];
-        for (int[] p : fullPath) {
-            int x = p[0], y = p[1];
-            if (x >= 0 && x < width && y >= 0 && y < height) {
-                mask[y][x] = true;
-            }
-        }
-
-        // 扫描线填充
-        for (int y = 0; y < height; y++) {
-            boolean inside = false;
-            for (int x = 0; x < width; x++) {
-                if (mask[y][x]) {
-                    inside = !inside;
-                }
-                if (inside) {
-                    mask[y][x] = true;
-                }
-            }
-        }
-
-        // 创建透明图像
-        WritableImage cropped = new WritableImage(width, height);
-        PixelReader reader = currentImage.getPixelReader();
-        PixelWriter writer = cropped.getPixelWriter();
-
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                Color color = reader.getColor(x, y);
-                if (mask[y][x]) {
-                    writer.setColor(x, y, color);
-                } else {
-                    writer.setColor(x, y, new Color(0, 0, 0, 0));
-                }
-            }
-        }
-
-        // 保存图像
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("导出抠图区域");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG 图片", "*.png"));
-        File file = fileChooser.showSaveDialog(canvas.getScene().getWindow());
-        if (file != null) {
-            try {
-                ImageIO.write(SwingFXUtils.fromFXImage(cropped, null), "png", file);
-                System.out.println("图像保存成功: " + file.getAbsolutePath());
-            } catch (IOException e) {
-                e.printStackTrace();
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            if (!visited[y][x]) {
+                writer.setColor(x, y, reader.getColor(x, y));
+            } else {
+                writer.setColor(x, y, new Color(0, 0, 0, 0));
             }
         }
     }
+
+    FileChooser fileChooser = new FileChooser();
+    fileChooser.setTitle("导出抠图区域");
+    fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG 图片", "*.png"));
+    File file = fileChooser.showSaveDialog(canvas.getScene().getWindow());
+    if (file != null) {
+        try {
+            ImageIO.write(SwingFXUtils.fromFXImage(cropped, null), "png", file);
+            System.out.println("图像保存成功: " + file.getAbsolutePath());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+    // 辅助方法：边缘 flood fill
+    private void floodFillOutside(boolean[][] visited, boolean[][] edgeMask, int width, int height) {
+        int[][] dirs = {{-1,0},{1,0},{0,-1},{0,1}};
+        List<int[]> queue = new ArrayList<>();
+
+        // 从边缘开始 flood fill
+        for (int x = 0; x < width; x++) {
+            queue.add(new int[]{x, 0});
+            queue.add(new int[]{x, height - 1});
+        }
+        for (int y = 0; y < height; y++) {
+            queue.add(new int[]{0, y});
+            queue.add(new int[]{width - 1, y});
+        }
+
+        while (!queue.isEmpty()) {
+            int[] p = queue.remove(queue.size() - 1);
+            int x = p[0], y = p[1];
+            if (x < 0 || x >= width || y < 0 || y >= height) continue;
+            if (visited[y][x] || edgeMask[y][x]) continue;
+            visited[y][x] = true;
+
+            for (int[] d : dirs) {
+                queue.add(new int[]{x + d[0], y + d[1]});
+            }
+        }
+    }
+
 
     private int[] snapToEdge(int x, int y) {
         int r = 7; // 邻域半径，5x5区域
@@ -649,6 +733,7 @@ public class ProcessSceneController implements Initializable {
             Point2D p = canvasToImageCoordinates(point[0], point[1]);
             gc.lineTo(p.getX(), p.getY());
         }
+        gc.stroke();
     }
 
     private void clearCanvas() {
