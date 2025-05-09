@@ -26,22 +26,22 @@ public class ImageProcessor {
     }
 
     // 彩色图构造函数, 转为灰度图
-    public ImageProcessor(double[][][] color) {
-        this.height = color.length;
-        this.width = color[0].length;
-        if (color[0][0].length != 3) throw new IllegalArgumentException("Input should be color graph");
-        this.graygraph = new double[height][width];
-        // 转换为灰度：0.299R + 0.587G + 0.114B
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                double r = color[y][x][0];
-                double g = color[y][x][1];
-                double b = color[y][x][2];
-                graygraph[y][x] = 0.299 * r + 0.587 * g + 0.114 * b;
-            }
-        }
-        initialize();
-    }
+//    public ImageProcessor(double[][][] color) {
+//        this.height = color.length;
+//        this.width = color[0].length;
+//        if (color[0][0].length != 3) throw new IllegalArgumentException("Input should be color graph");
+//        this.graygraph = new double[height][width];
+//        // 转换为灰度：0.299R + 0.587G + 0.114B
+//        for (int y = 0; y < height; y++) {
+//            for (int x = 0; x < width; x++) {
+//                double r = color[y][x][0];
+//                double g = color[y][x][1];
+//                double b = color[y][x][2];
+//                graygraph[y][x] = 0.299 * r + 0.587 * g + 0.114 * b;
+//            }
+//        }
+//        initialize();
+//    }
 
     public double[][] Padding(double[][] graygraph) {
         double[][] padding = new double[height + 2][width + 2];
@@ -91,5 +91,3 @@ public class ImageProcessor {
     } // 返回目标像素的cost
 
 }
-
-
