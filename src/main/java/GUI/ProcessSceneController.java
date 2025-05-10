@@ -260,7 +260,7 @@ public class ProcessSceneController implements Initializable {
                         for (int[][] segment : committedPaths) {
                             drawPath(segment, Color.RED);
                         }
-// 动态预览路径使用绿色
+                        // 动态预览路径使用绿色
                         drawPath(path, Color.LIME);
                     });
                     new Thread(fixTask).start();
@@ -453,7 +453,7 @@ private void exportCroppedRegion(ActionEvent event) {
 
 
     private int[] snapToEdge(int x, int y) {
-        int r = 7; // 邻域半径，5x5区域
+        int r = 5; // 邻域半径，11x11区域
         int Xmin = Math.max(0, x - r);
         int Xmax = Math.min(imageProcessor.getWidth() - 1, x + r);
         int Ymin = Math.max(0, y - r);
