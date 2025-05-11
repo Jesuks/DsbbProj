@@ -69,9 +69,7 @@ public class ProcessSceneController implements Initializable {
         }
     }
     private void handleKeyInput(KeyEvent event) {
-        if (event.getCode() ==  KeyCode.PLUS || event.getText().equals("u") ){
-            enterAddAnchorMode();  // 启动添加模式
-        } else if (event.getCode() == KeyCode.MINUS || event.getText().equals("i")) {
+         if (event.getCode() == KeyCode.MINUS || event.getText().equals("2")) {
             exitAddAnchorMode();   // 结束并闭合路径
         }
     }
