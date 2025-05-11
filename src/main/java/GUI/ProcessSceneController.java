@@ -69,7 +69,10 @@ public class ProcessSceneController implements Initializable {
         }
     }
     private void handleKeyInput(KeyEvent event) {
-         if (event.getCode() == KeyCode.MINUS || event.getText().equals("2")) {
+        if (event.getCode() == KeyCode.MINUS || event.getText().equals("1")) {
+            enterAddAnchorMode();   // 启动添加模式
+        }
+        else if (event.getCode() == KeyCode.MINUS || event.getText().equals("2")) {
             exitAddAnchorMode();   // 结束并闭合路径
         }
     }
@@ -181,6 +184,23 @@ public class ProcessSceneController implements Initializable {
         if (seedPoint == null) {
             System.out.println("请先选择种子点");
             return;
+        }
+
+        // 新增代码：移除最后一条闭合路径
+        if (closingPath != null) {
+            // 从committedPaths中移除闭合路径
+            if (!committedPaths.isEmpty()) {
+                committedPaths.remove(committedPaths.size() - 1);
+            }
+            closingPath = null;
+            // 清空画布并重新绘制剩余路径
+            clearCanvas();
+            for (int[][] segment : committedPaths) {
+                drawPath(segment, Color.RED);
+            }
+            for (Point2D point : pathPoints) {
+                drawPoint((int) point.getX(), (int) point.getY(), Color.LIMEGREEN);
+            }
         }
 
         isAddingTargets = true;
